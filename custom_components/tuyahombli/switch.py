@@ -444,13 +444,6 @@ SWITCHES: dict[str, tuple[SwitchEntityDescription, ...]] = {
             device_class=SwitchDeviceClass.SWITCH,
             entity_category=EntityCategory.CONFIG,
         ),
-        SwitchEntityDescription(
-            key=DPCode.STOP_IRRIGATION,
-            translation_key="stop_irrigation",
-            icon="mdi:sprinkler",
-            device_class=SwitchDeviceClass.SWITCH,
-            entity_category=EntityCategory.CONFIG,
-        ),
     ),
     # Siren Alarm
     # https://developer.tuya.com/en/docs/iot/categorysgbj?id=Kaiuz37tlpbnu

@@ -68,6 +68,9 @@
       },
       "snooze": {
         "name": "Snooze"
+      },
+      "stop_irrigation": {
+        "name": "Stop irrigation"
       }
     },
     "cover": {
@@ -708,9 +711,6 @@
       },
       "sleep_aid": {
         "name": "Sleep aid"
-      },
-      "stop_irrigation": {
-        "name": "Stop irrigation"
       },
       "manual_switch": {
         "name": "Manual switch",

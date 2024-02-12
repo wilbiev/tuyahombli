@@ -68,6 +68,9 @@
             },
             "snooze": {
                 "name": "Snooze"
+            },
+            "stop_irrigation": {
+                "name": "Stop irrigation"
             }
         },
         "cover": {
@@ -793,9 +796,6 @@
             },
             "sterilization": {
                 "name": "Sterilization"
-            },
-            "stop_irrigation": {
-                "name": "Stop irrigation"
             },
             "switch": {
                 "name": "Switch"

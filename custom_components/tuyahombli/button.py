@@ -60,6 +60,15 @@ BUTTONS: dict[str, tuple[ButtonEntityDescription, ...]] = {
             icon="mdi:sleep",
         ),
     ),
+    # Smart Water Timer
+    "sfkzq": (
+        ButtonEntityDescription(
+            key=DPCode.STOP_IRRIGATION,
+            translation_key="stop_irrigation",
+            icon="mdi:sprinkler",
+            entity_category=EntityCategory.CONFIG,
+        ),
+    ),
 }
 
 

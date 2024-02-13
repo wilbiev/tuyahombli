@@ -70,7 +70,11 @@
         "name": "Snooze"
       },
       "stop_irrigation": {
-        "name": "Stop irrigation"
+        "name": "Stop irrigation",
+        "state": {
+          "0": "[%key:common::state::off%]",
+          "1": "[%key:common::state::on%]"
+        }
       }
     },
     "cover": {

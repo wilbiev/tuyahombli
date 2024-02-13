@@ -70,11 +70,7 @@
         "name": "Snooze"
       },
       "stop_irrigation": {
-        "name": "Stop irrigation",
-        "state": {
-          "0": "[%key:common::state::off%]",
-          "1": "[%key:common::state::on%]"
-        }
+        "name": "Stop irrigation"
       }
     },
     "cover": {
@@ -468,8 +464,8 @@
         "name": "Status",
         "state": {
           "0": "Inactive",
-          "1": "Automatic",
-          "2": "Manual",
+          "1": "Manual",
+          "2": "Automatic",
           "3": "Delay",
           "4": "Status 4",
           "5": "Status 5"

@@ -11,7 +11,7 @@ This version supports the Hombli Smart Water Controller (Wifi Gateway/Bluetooth 
 
 ### Setup Tuya integration
 
-Follow the steps to create the [Tuya integration](https://www.home-assistant.io/integrations/tuya)
+Follow the steps to create the [Tuya integration](https://github.com/tuya/tuya-home-assistant/blob/main/docs/install.md) and [Tuya IoT Platform Configuration Guide](https://github.com/tuya/tuya-home-assistant/blob/main/docs/install.md)
 
 ### Setup Hombli Smart Water Controller
 

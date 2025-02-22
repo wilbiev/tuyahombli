@@ -49,6 +49,9 @@ DEFAULT_COLOR_TYPE_DATA_V2 = ColorTypeData(
     v_type=IntegerTypeData(DPCode.COLOUR_DATA_HSV, min=1, scale=0, max=1000, step=1),
 )
 
+MAX_MIREDS = 500  # 2000 K
+MIN_MIREDS = 153  # 6500 K
+
 
 @dataclass(frozen=True)
 class TuyaLightEntityDescription(LightEntityDescription):
@@ -257,6 +260,15 @@ LIGHTS: dict[str, tuple[TuyaLightEntityDescription, ...]] = {
             entity_category=EntityCategory.CONFIG,
         ),
     ),
+    # Smart Gardening system
+    # https://developer.tuya.com/en/docs/iot/categorysz?id=Kaiuz4e6h7up0
+    "sz": (
+        TuyaLightEntityDescription(
+            key=DPCode.LIGHT,
+            brightness=DPCode.BRIGHT_VALUE,
+            translation_key="light",
+        ),
+    ),
     # Dimmer Switch
     # https://developer.tuya.com/en/docs/iot/categorytgkg?id=Kaiuz0ktx7m0o
     "tgkg": (
@@ -379,6 +391,10 @@ LIGHTS["cz"] = LIGHTS["kg"]
 # https://developer.tuya.com/en/docs/iot/s?id=K9gf7o5prgf7s
 LIGHTS["pc"] = LIGHTS["kg"]
 
+# Smart Camera - Low power consumption camera (duplicate of `sp`)
+# Undocumented, see https://github.com/home-assistant/core/issues/132844
+LIGHTS["dghsxj"] = LIGHTS["sp"]
+
 # Dimmer (duplicate of `tgq`)
 # https://developer.tuya.com/en/docs/iot/tgq?id=Kaof8ke9il4k4
 LIGHTS["tdq"] = LIGHTS["tgq"]
@@ -450,6 +466,8 @@ class TuyaLightEntity(TuyaEntity, LightEntity):
     _color_mode: DPCode | None = None
     _color_temp: IntegerTypeData | None = None
     _fixed_color_mode: ColorMode | None = None
+    _attr_min_color_temp_kelvin = 2000  # 500 Mireds
+    _attr_max_color_temp_kelvin = 6500  # 153 Mireds
 
     def __init__(
         self,
@@ -539,9 +557,11 @@ class TuyaLightEntity(TuyaEntity, LightEntity):
                     "code": self._color_temp.dpcode,
                     "value": round(
                         self._color_temp.remap_value_from(
-                            kwargs[ATTR_COLOR_TEMP_KELVIN],
-                            self.min_mireds,
-                            self.max_mireds,
+                            color_util.color_temperature_kelvin_to_mired(
+                                kwargs[ATTR_COLOR_TEMP_KELVIN]
+                            ),
+                            MIN_MIREDS,
+                            MAX_MIREDS,
                             reverse=True,
                         )
                     ),
@@ -681,8 +701,8 @@ class TuyaLightEntity(TuyaEntity, LightEntity):
         return round(brightness)
 
     @property
-    def color_temp(self) -> int | None:
-        """Return the color_temp of the light."""
+    def color_temp_kelvin(self) -> int | None:
+        """Return the color temperature value in Kelvin."""
         if not self._color_temp:
             return None
 
@@ -690,9 +710,9 @@ class TuyaLightEntity(TuyaEntity, LightEntity):
         if temperature is None:
             return None
 
-        return round(
+        return color_util.color_temperature_mired_to_kelvin(
             self._color_temp.remap_value_to(
-                temperature, self.min_mireds, self.max_mireds, reverse=True
+                temperature, MIN_MIREDS, MAX_MIREDS, reverse=True
             )
         )
 

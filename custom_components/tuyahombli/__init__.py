@@ -11,7 +11,6 @@ from tuya_iot import (
     TuyaDeviceManager,
     TuyaHomeManager,
     TuyaOpenAPI,
-    TuyaOpenMQ,
 )
 
 from homeassistant.config_entries import ConfigEntry
@@ -76,7 +75,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if response.get("success", False) is False:
         raise ConfigEntryNotReady(response)
 
-    tuya_mq = TuyaOpenMQ(api)
+    tuya_mq = TuyaOpenMQ_2(api)
     tuya_mq.start2()
 
     device_ids: set[str] = set()
@@ -172,7 +171,7 @@ class DeviceListener(TuyaDeviceListener):
 
         device_manager = self.device_manager
         device_manager.mq.stop()
-        tuya_mq = TuyaOpenMQ(device_manager.api)
+        tuya_mq = TuyaOpenMQ_2(device_manager.api)
         tuya_mq.start2()
 
         device_manager.mq = tuya_mq
@@ -194,7 +193,153 @@ class DeviceListener(TuyaDeviceListener):
             device_registry.async_remove_device(device_entry.id)
             self.device_ids.discard(device_id)
 
-    def _start2(self, mq_config: TuyaMQConfig) -> mqtt.Client:
+
+class TuyaOpenMQ_2(threading.Thread):
+    """Tuya open iot hub.
+
+    Tuya open iot hub base on mqtt.
+
+    Attributes:
+      openapi: tuya openapi
+    """
+
+    def __init__(self, api: TuyaOpenAPI) -> None:
+        """Init TuyaOpenMQ."""
+        threading.Thread.__init__(self)
+        self.api: TuyaOpenAPI = api
+        self._stop_event = threading.Event()
+        self.client = None
+        self.mq_config = None
+        self.message_listeners = set()
+
+    def _get_mqtt_config(self) -> Optional[TuyaMQConfig]:
+        response = self.api.post(
+            TO_C_CUSTOM_MQTT_CONFIG_API
+            if (self.api.auth_type == AuthType.CUSTOM)
+            else TO_C_SMART_HOME_MQTT_CONFIG_API,
+            {
+                "uid": self.api.token_info.uid,
+                "link_id": LINK_ID,
+                "link_type": "mqtt",
+                "topics": "device",
+                "msg_encrypted_version": "2.0"
+                if (self.api.auth_type == AuthType.CUSTOM)
+                else "1.0",
+            },
+        )
+
+        if response.get("success", False) is False:
+            return None
+
+        return TuyaMQConfig(response)
+
+    def _decode_mq_message(self, b64msg: str, password: str, t: str) -> dict[str, Any]:
+        key = password[8:24]
+
+        if self.api.auth_type == AuthType.SMART_HOME:
+            cipher = AES.new(key.encode("utf8"), AES.MODE_ECB)
+            msg = cipher.decrypt(base64.b64decode(b64msg))
+            padding_bytes = msg[-1]
+            msg = msg[:-padding_bytes]
+            return json.loads(msg)
+        else:
+            # base64 decode
+            buffer = base64.b64decode(b64msg)
+
+            # get iv buffer
+            iv_length = int.from_bytes(buffer[0:4], byteorder="big")
+            iv_buffer = buffer[4: iv_length + 4]
+
+            # get data buffer
+            data_buffer = buffer[iv_length + 4: len(buffer) - GCM_TAG_LENGTH]
+
+            # aad
+            aad_buffer = str(t).encode("utf8")
+
+            # tag
+            tag_buffer = buffer[len(buffer) - GCM_TAG_LENGTH:]
+
+            cipher = AES.new(key.encode("utf8"), AES.MODE_GCM, nonce=iv_buffer)
+            cipher.update(aad_buffer)
+            plaintext = cipher.decrypt_and_verify(data_buffer, tag_buffer).decode(
+                "utf8"
+            )
+            return json.loads(plaintext)
+
+    def _on_disconnect(self, client, userdata, rc):
+        if rc != 0:
+            logger.error(f"Unexpected disconnection.{rc}")
+        else:
+            logger.debug("disconnect")
+
+    def _on_connect(self, mqttc: mqtt.Client, user_data: Any, flags, rc):
+        logger.debug(f"connect flags->{flags}, rc->{rc}")
+        if rc == 0:
+            for (key, value) in self.mq_config.source_topic.items():
+                mqttc.subscribe(value)
+        elif rc == CONNECT_FAILED_NOT_AUTHORISED:
+            self.__run_mqtt()
+
+    def _on_message(self, mqttc: mqtt.Client, user_data: Any, msg: mqtt.MQTTMessage):
+        logger.debug(f"payload-> {msg.payload}")
+
+        msg_dict = json.loads(msg.payload.decode("utf8"))
+
+        t = msg_dict.get("t", "")
+
+        mq_config = user_data["mqConfig"]
+        decrypted_data = self._decode_mq_message(
+            msg_dict["data"], mq_config.password, t
+        )
+        if decrypted_data is None:
+            return
+
+        msg_dict["data"] = decrypted_data
+        logger.debug(f"on_message: {msg_dict}")
+
+        for listener in self.message_listeners:
+            listener(msg_dict)
+
+    def _on_subscribe(self, mqttc: mqtt.Client, user_data: Any, mid, granted_qos):
+        logger.debug(f"_on_subscribe: {mid}")
+
+    def _on_log(self, mqttc: mqtt.Client, user_data: Any, level, string):
+        logger.debug(f"_on_log: {string}")
+
+    def run(self):
+        """Method representing the thread's activity which should not be used directly."""
+        backoff_seconds = 1
+        while not self._stop_event.is_set():
+            try:
+                self.__run_mqtt()
+                backoff_seconds = 1
+
+                # reconnect every 2 hours required.
+                time.sleep(self.mq_config.expire_time - 60)
+            except RequestException as e:
+                logger.exception(e)
+                logger.error(f"failed to refresh mqtt server, retrying in {backoff_seconds} seconds.")
+
+                time.sleep(backoff_seconds)
+                backoff_seconds = min(backoff_seconds * 2 , 60) # Try at most every 60 seconds to refresh
+
+
+    def __run_mqtt(self):
+        mq_config = self._get_mqtt_config()
+        if mq_config is None:
+            logger.error("error while get mqtt config")
+            return
+
+        self.mq_config = mq_config
+
+        logger.debug(f"connecting {mq_config.url}")
+        mqttc = self._start(mq_config)
+
+        if self.client:
+            self.client.disconnect()
+        self.client = mqttc
+
+    def _start(self, mq_config: TuyaMQConfig) -> mqtt.Client:
         mqttc = mqtt.Client(client_id=mq_config.client_id)
         mqttc.username_pw_set(mq_config.username, mq_config.password)
         mqttc.user_data_set({"mqConfig": mq_config})
@@ -213,10 +358,29 @@ class DeviceListener(TuyaDeviceListener):
         mqttc.loop_start()
         return mqttc
 
-    def start2(self):
+    def start(self):
         """Start mqtt.
 
         Start mqtt thread
         """
-        logger.debug("start2")
-        super().start2()
+        logger.debug("start")
+        super().start()
+
+    def stop(self):
+        """Stop mqtt.
+
+        Stop mqtt thread
+        """
+        logger.debug("stop")
+        self.message_listeners = set()
+        self.client.disconnect()
+        self.client = None
+        self._stop_event.set()
+
+    def add_message_listener(self, listener: Callable[[str], None]):
+        """Add mqtt message listener."""
+        self.message_listeners.add(listener)
+
+    def remove_message_listener(self, listener: Callable[[str], None]):
+        """Remvoe mqtt message listener."""
+        self.message_listeners.discard(listener)

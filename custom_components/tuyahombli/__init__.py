@@ -77,7 +77,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         raise ConfigEntryNotReady(response)
 
     tuya_mq = TuyaOpenMQ(api)
-    tuya_mq.start()
+    tuya_mq.start2()
 
     device_ids: set[str] = set()
     device_manager = TuyaDeviceManager(api, tuya_mq)
@@ -173,7 +173,7 @@ class DeviceListener(TuyaDeviceListener):
         device_manager = self.device_manager
         device_manager.mq.stop()
         tuya_mq = TuyaOpenMQ(device_manager.api)
-        tuya_mq.start()
+        tuya_mq.start2()
 
         device_manager.mq = tuya_mq
         tuya_mq.add_message_listener(device_manager.on_message)
@@ -193,3 +193,30 @@ class DeviceListener(TuyaDeviceListener):
         if device_entry is not None:
             device_registry.async_remove_device(device_entry.id)
             self.device_ids.discard(device_id)
+
+    def _start2(self, mq_config: TuyaMQConfig) -> mqtt.Client:
+        mqttc = mqtt.Client(client_id=mq_config.client_id)
+        mqttc.username_pw_set(mq_config.username, mq_config.password)
+        mqttc.user_data_set({"mqConfig": mq_config})
+        mqttc.on_connect = self._on_connect
+        mqttc.on_message = self._on_message
+        mqttc.on_subscribe = self._on_subscribe
+        mqttc.on_log = self._on_log
+        mqttc.on_disconnect = self._on_disconnect
+
+        url = urlsplit(mq_config.url)
+        if url.scheme == "ssl":
+            mqttc.tls_set()
+
+        mqttc.connect(url.hostname, url.port)
+
+        mqttc.loop_start()
+        return mqttc
+
+    def start2(self):
+        """Start mqtt.
+
+        Start mqtt thread
+        """
+        logger.debug("start2")
+        super().start2()

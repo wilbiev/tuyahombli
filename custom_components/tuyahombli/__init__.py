@@ -76,7 +76,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         raise ConfigEntryNotReady(response)
 
     tuya_mq = TuyaOpenMQ_2(api)
-    tuya_mq.start2()
+    tuya_mq.start()
 
     device_ids: set[str] = set()
     device_manager = TuyaDeviceManager(api, tuya_mq)
@@ -172,7 +172,7 @@ class DeviceListener(TuyaDeviceListener):
         device_manager = self.device_manager
         device_manager.mq.stop()
         tuya_mq = TuyaOpenMQ_2(device_manager.api)
-        tuya_mq.start2()
+        tuya_mq.start()
 
         device_manager.mq = tuya_mq
         tuya_mq.add_message_listener(device_manager.on_message)

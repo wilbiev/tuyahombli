@@ -3,31 +3,37 @@ from __future__ import annotations
 
 from contextlib import suppress
 import json
-from typing import Any, cast
+from typing import Any
 
 from tuya_iot import TuyaDevice
 
 from homeassistant.components.diagnostics import REDACTED
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_COUNTRY_CODE
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.util import dt as dt_util
 
-from . import HomeAssistantTuyaData
+from . import TuyaConfigEntry
 from .const import CONF_APP_TYPE, CONF_AUTH_TYPE, CONF_ENDPOINT, DOMAIN, DPCode
+
+_REDACTED_DPCODES = {
+    DPCode.ALARM_MESSAGE,
+    DPCode.ALARM_MSG,
+    DPCode.DOORBELL_PIC,
+    DPCode.MOVEMENT_DETECT_PIC,
+}
 
 
 async def async_get_config_entry_diagnostics(
-    hass: HomeAssistant, entry: ConfigEntry
+    hass: HomeAssistant, entry: TuyaConfigEntry
 ) -> dict[str, Any]:
     """Return diagnostics for a config entry."""
     return _async_get_diagnostics(hass, entry)
 
 
 async def async_get_device_diagnostics(
-    hass: HomeAssistant, entry: ConfigEntry, device: DeviceEntry
+    hass: HomeAssistant, entry: TuyaConfigEntry, device: DeviceEntry
 ) -> dict[str, Any]:
     """Return diagnostics for a device entry."""
     return _async_get_diagnostics(hass, entry, device)
@@ -36,15 +42,16 @@ async def async_get_device_diagnostics(
 @callback
 def _async_get_diagnostics(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: TuyaConfigEntry,
     device: DeviceEntry | None = None,
 ) -> dict[str, Any]:
     """Return diagnostics for a config entry."""
-    hass_data: HomeAssistantTuyaData = hass.data[DOMAIN][entry.entry_id]
+    device_manager = entry.runtime_data.device_manager
+    home_manager = entry.runtime_data.home_manager
 
     mqtt_connected = None
-    if hass_data.home_manager.mq.client:
-        mqtt_connected = hass_data.home_manager.mq.client.is_connected()
+    if home_manager.mq.client:
+        mqtt_connected = home_manager.mq.client.is_connected()
 
     data = {
         "endpoint": entry.data[CONF_ENDPOINT],
@@ -59,13 +66,13 @@ def _async_get_diagnostics(
     if device:
         tuya_device_id = next(iter(device.identifiers))[1]
         data |= _async_device_as_dict(
-            hass, hass_data.device_manager.device_map[tuya_device_id]
+            hass, device_manager.device_map[tuya_device_id]
         )
     else:
         data.update(
             devices=[
                 _async_device_as_dict(hass, device)
-                for device in hass_data.device_manager.device_map.values()
+                for device in device_manager.device_map.values()
             ]
         )
 
@@ -78,6 +85,7 @@ def _async_device_as_dict(hass: HomeAssistant, device: TuyaDevice) -> dict[str, 
 
     # Base device information, without sensitive information.
     data = {
+        "id": device.id,
         "name": device.name,
         "model": device.model if hasattr(device, "model") else None,
         "category": device.category,
@@ -93,28 +101,31 @@ def _async_device_as_dict(hass: HomeAssistant, device: TuyaDevice) -> dict[str, 
         "status_range": {},
         "status": {},
         "home_assistant": {},
+        "set_up": device.set_up,
+        "support_local": device.support_local,
     }
 
     # Gather Tuya states
     for dpcode, value in device.status.items():
         # These statuses may contain sensitive information, redact these..
-        if dpcode in {DPCode.ALARM_MESSAGE, DPCode.MOVEMENT_DETECT_PIC}:
+        if dpcode in _REDACTED_DPCODES:
             data["status"][dpcode] = REDACTED
             continue
 
-        with suppress(ValueError, TypeError):
-            value = json.loads(value)
         data["status"][dpcode] = value
 
     # Gather Tuya functions
     for function in device.function.values():
-        value = function.values
-        with suppress(ValueError, TypeError, AttributeError):
-            value = json.loads(cast(str, function.values))
-
         data["function"][function.code] = {
             "type": function.type,
-            "value": value,
+            "value": function.values,
+        }
+
+    # Gather Tuya status ranges
+    for status_range in device.status_range.values():
+        data["status_range"][status_range.code] = {
+            "type": status_range.type,
+            "value": status_range.values,
         }
 
     # Gather Tuya status ranges

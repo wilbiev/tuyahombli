@@ -35,6 +35,7 @@ from .const import (
 
 from .openmq import TuyaOpenMQ_2
 
+type TuyaConfigEntry = ConfigEntry[HomeAssistantTuyaData]
 
 class HomeAssistantTuyaData(NamedTuple):
     """Tuya data stored in the Home Assistant data object."""
@@ -44,7 +45,7 @@ class HomeAssistantTuyaData(NamedTuple):
     home_manager: TuyaHomeManager
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: TuyaConfigEntry) -> bool:
     """Async setup hass config entry."""
     hass.data.setdefault(DOMAIN, {})
 
@@ -86,7 +87,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     listener = DeviceListener(hass, device_manager, device_ids)
     device_manager.add_device_listener(listener)
 
-    hass.data[DOMAIN][entry.entry_id] = HomeAssistantTuyaData(
+    entry.runtime_data = HomeAssistantTuyaData(
         device_listener=listener,
         device_manager=device_manager,
         home_manager=home_manager,
@@ -99,18 +100,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Register known device IDs
     device_registry = dr.async_get(hass)
     for device in device_manager.device_map.values():
+        LOGGER.debug(
+            "Register device %s (online: %s): %s (function: %s, status range: %s)",
+            device.id,
+            device.online,
+            device.status,
+            device.function,
+            device.status_range,
+        )
         device_registry.async_get_or_create(
             config_entry_id=entry.entry_id,
             identifiers={(DOMAIN, device.id)},
             manufacturer="Tuya",
             name=device.name,
             model=f"{device.product_name} (unsupported)",
+            model_id=device.product_id,
         )
         device_ids.add(device.id)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
-
 
 async def cleanup_device_registry(
     hass: HomeAssistant, device_manager: TuyaDeviceManager
@@ -123,20 +132,14 @@ async def cleanup_device_registry(
                 device_registry.async_remove_device(dev_id)
                 break
 
-
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: TuyaConfigEntry) -> bool:
     """Unloading the Tuya platforms."""
-    unload = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    if unload:
-        hass_data: HomeAssistantTuyaData = hass.data[DOMAIN][entry.entry_id]
-        hass_data.device_manager.mq.stop()
-        hass_data.device_manager.remove_device_listener(hass_data.device_listener)
-
-        hass.data[DOMAIN].pop(entry.entry_id)
-        if not hass.data[DOMAIN]:
-            hass.data.pop(DOMAIN)
-
-    return unload
+    if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
+        tuya = entry.runtime_data
+        if tuya.device_manager.mq is not None:
+            tuya.device_manager.mq.stop()
+        tuya.device_manager.remove_device_listener(tuya.listener)
+    return unload_ok
 
 
 class DeviceListener(TuyaDeviceListener):

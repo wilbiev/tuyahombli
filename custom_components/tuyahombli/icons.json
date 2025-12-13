@@ -314,6 +314,9 @@
       "ionizer": {
         "default": "mdi:minus-circle-outline"
       },
+      "manual_switch": {
+        "default": "mdi:sprinkler"
+      },
       "motion_alarm": {
         "default": "mdi:motion-sensor"
       },

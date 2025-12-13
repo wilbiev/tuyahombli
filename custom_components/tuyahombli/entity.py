@@ -23,6 +23,8 @@ class TuyaEntity(Entity):
     def __init__(self, device: TuyaDevice, device_manager: TuyaDeviceManager) -> None:
         """Init TuyaHaEntity."""
         self._attr_unique_id = f"tuya.{device.id}"
+        # TuyaEntity initialize mq can subscribe
+        device.set_up = True
         self.device = device
         self.device_manager = device_manager
 
@@ -48,16 +50,9 @@ class TuyaEntity(Entity):
             async_dispatcher_connect(
                 self.hass,
                 f"{TUYA_HA_SIGNAL_UPDATE_ENTITY}_{self.device.id}",
-                self._handle_state_update,
+                self.async_write_ha_state,
             )
         )
-
-    async def _handle_state_update(
-        self,
-        updated_status_properties: list[str] | None,
-        dp_timestamps: dict | None = None,
-    ) -> None:
-        self.async_write_ha_state()
 
     def _send_command(self, commands: list[dict[str, Any]]) -> None:
         """Send command to the device."""

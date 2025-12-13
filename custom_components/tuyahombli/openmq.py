@@ -1,19 +1,19 @@
 """Tuya Open IOT HUB which base on MQTT."""
+
 from __future__ import annotations
 
 import base64
+from collections.abc import Callable
 import json
 import threading
 import time
-import uuid
-from typing import Any, Callable
+from typing import Any, Optional
 from urllib.parse import urlsplit
-from typing import Optional
+import uuid
 
 from Crypto.Cipher import AES
 from paho.mqtt import client as mqtt
 from requests.exceptions import RequestException
-
 from tuya_iot.openapi import TuyaOpenAPI
 from tuya_iot.openlogging import logger
 from tuya_iot.tuya_enums import AuthType
@@ -95,16 +95,16 @@ class TuyaOpenMQ_2(threading.Thread):
 
             # get iv buffer
             iv_length = int.from_bytes(buffer[0:4], byteorder="big")
-            iv_buffer = buffer[4: iv_length + 4]
+            iv_buffer = buffer[4 : iv_length + 4]
 
             # get data buffer
-            data_buffer = buffer[iv_length + 4: len(buffer) - GCM_TAG_LENGTH]
+            data_buffer = buffer[iv_length + 4 : len(buffer) - GCM_TAG_LENGTH]
 
             # aad
             aad_buffer = str(t).encode("utf8")
 
             # tag
-            tag_buffer = buffer[len(buffer) - GCM_TAG_LENGTH:]
+            tag_buffer = buffer[len(buffer) - GCM_TAG_LENGTH :]
 
             cipher = AES.new(key.encode("utf8"), AES.MODE_GCM, nonce=iv_buffer)
             cipher.update(aad_buffer)
@@ -122,7 +122,7 @@ class TuyaOpenMQ_2(threading.Thread):
     def _on_connect(self, mqttc: mqtt.Client, user_data: Any, flags, rc):
         logger.debug(f"connect flags->{flags}, rc->{rc}")
         if rc == 0:
-            for (key, value) in self.mq_config.source_topic.items():
+            for value in self.mq_config.source_topic.values():
                 mqttc.subscribe(value)
         elif rc == CONNECT_FAILED_NOT_AUTHORISED:
             self.__run_mqtt()
@@ -165,11 +165,14 @@ class TuyaOpenMQ_2(threading.Thread):
                 time.sleep(self.mq_config.expire_time - 60)
             except RequestException as e:
                 logger.exception(e)
-                logger.error(f"failed to refresh mqtt server, retrying in {backoff_seconds} seconds.")
+                logger.error(
+                    f"failed to refresh mqtt server, retrying in {backoff_seconds} seconds."
+                )
 
                 time.sleep(backoff_seconds)
-                backoff_seconds = min(backoff_seconds * 2 , 60) # Try at most every 60 seconds to refresh
-
+                backoff_seconds = min(
+                    backoff_seconds * 2, 60
+                )  # Try at most every 60 seconds to refresh
 
     def __run_mqtt(self):
         mq_config = self._get_mqtt_config()

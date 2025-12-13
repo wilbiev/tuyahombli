@@ -981,6 +981,13 @@
       "ionizer": {
         "name": "Ionizer"
       },
+      "manual_switch": {
+        "name": "Manual switch",
+        "state": {
+          "off": "Open",
+          "on": "Closed"
+        }
+      },
       "motion_alarm": {
         "name": "Motion alarm"
       },

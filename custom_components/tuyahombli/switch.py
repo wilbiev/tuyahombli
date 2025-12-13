@@ -670,6 +670,11 @@ SWITCHES: dict[DeviceCategory, tuple[SwitchEntityDescription, ...]] = {
             deprecated="deprecated_entity_new_valve",
             breaks_in_ha_version="2026.4.0",
         ),
+        SwitchEntityDescription(
+            key=DPCode.MANUAL_SWITCH,
+            translation_key="manual_switch",
+            entity_category=EntityCategory.CONFIG,
+        ),
     ),
     DeviceCategory.SGBJ: (
         SwitchEntityDescription(

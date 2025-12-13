@@ -22,11 +22,6 @@ from .models import DPCodeBooleanWrapper
 VALVES: dict[DeviceCategory, tuple[ValveEntityDescription, ...]] = {
     DeviceCategory.SFKZQ: (
         ValveEntityDescription(
-            key=DPCode.MANUAL_SWITCH,
-            translation_key="valve",
-            device_class=ValveDeviceClass.WATER,
-        ),
-        ValveEntityDescription(
             key=DPCode.SWITCH,
             translation_key="valve",
             device_class=ValveDeviceClass.WATER,

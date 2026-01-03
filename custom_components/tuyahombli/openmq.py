@@ -7,7 +7,7 @@ from collections.abc import Callable
 import json
 import threading
 import time
-from typing import Any, Optional
+from typing import Any
 from urllib.parse import urlsplit
 import uuid
 
@@ -59,7 +59,7 @@ class TuyaOpenMQ_2(threading.Thread):
         self.mq_config = None
         self.message_listeners = set()
 
-    def _get_mqtt_config(self) -> Optional[TuyaMQConfig]:
+    def _get_mqtt_config(self) -> TuyaMQConfig | None:
         response = self.api.post(
             TO_C_CUSTOM_MQTT_CONFIG_API
             if (self.api.auth_type == AuthType.CUSTOM)
@@ -89,29 +89,26 @@ class TuyaOpenMQ_2(threading.Thread):
             padding_bytes = msg[-1]
             msg = msg[:-padding_bytes]
             return json.loads(msg)
-        else:
-            # base64 decode
-            buffer = base64.b64decode(b64msg)
+        # base64 decode
+        buffer = base64.b64decode(b64msg)
 
-            # get iv buffer
-            iv_length = int.from_bytes(buffer[0:4], byteorder="big")
-            iv_buffer = buffer[4 : iv_length + 4]
+        # get iv buffer
+        iv_length = int.from_bytes(buffer[0:4], byteorder="big")
+        iv_buffer = buffer[4 : iv_length + 4]
 
-            # get data buffer
-            data_buffer = buffer[iv_length + 4 : len(buffer) - GCM_TAG_LENGTH]
+        # get data buffer
+        data_buffer = buffer[iv_length + 4 : len(buffer) - GCM_TAG_LENGTH]
 
-            # aad
-            aad_buffer = str(t).encode("utf8")
+        # aad
+        aad_buffer = str(t).encode("utf8")
 
-            # tag
-            tag_buffer = buffer[len(buffer) - GCM_TAG_LENGTH :]
+        # tag
+        tag_buffer = buffer[len(buffer) - GCM_TAG_LENGTH :]
 
-            cipher = AES.new(key.encode("utf8"), AES.MODE_GCM, nonce=iv_buffer)
-            cipher.update(aad_buffer)
-            plaintext = cipher.decrypt_and_verify(data_buffer, tag_buffer).decode(
-                "utf8"
-            )
-            return json.loads(plaintext)
+        cipher = AES.new(key.encode("utf8"), AES.MODE_GCM, nonce=iv_buffer)
+        cipher.update(aad_buffer)
+        plaintext = cipher.decrypt_and_verify(data_buffer, tag_buffer).decode("utf8")
+        return json.loads(plaintext)
 
     def _on_disconnect(self, client, userdata, rc):
         if rc != 0:

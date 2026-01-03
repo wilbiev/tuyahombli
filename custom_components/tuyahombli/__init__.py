@@ -1,7 +1,8 @@
 """Support for Tuya Smart devices."""
+
 from __future__ import annotations
 
-from typing import NamedTuple
+from typing import NamedTuple, cast
 
 import requests
 from tuya_iot import (
@@ -11,6 +12,7 @@ from tuya_iot import (
     TuyaDeviceManager,
     TuyaHomeManager,
     TuyaOpenAPI,
+    TuyaOpenMQ,
 )
 
 from homeassistant.config_entries import ConfigEntry
@@ -32,10 +34,10 @@ from .const import (
     TUYA_DISCOVERY_NEW,
     TUYA_HA_SIGNAL_UPDATE_ENTITY,
 )
-
 from .openmq import TuyaOpenMQ_2
 
 type TuyaConfigEntry = ConfigEntry[HomeAssistantTuyaData]
+
 
 class HomeAssistantTuyaData(NamedTuple):
     """Tuya data stored in the Home Assistant data object."""
@@ -78,7 +80,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: TuyaConfigEntry) -> bool
     if response.get("success", False) is False:
         raise ConfigEntryNotReady(response)
 
-    tuya_mq = TuyaOpenMQ_2(api)
+    tuya_mq = cast("TuyaOpenMQ", TuyaOpenMQ_2(api))
     tuya_mq.start()
 
     device_ids: set[str] = set()
@@ -121,6 +123,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: TuyaConfigEntry) -> bool
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
+
 async def cleanup_device_registry(
     hass: HomeAssistant, device_manager: TuyaDeviceManager
 ) -> None:
@@ -132,13 +135,14 @@ async def cleanup_device_registry(
                 device_registry.async_remove_device(dev_id)
                 break
 
+
 async def async_unload_entry(hass: HomeAssistant, entry: TuyaConfigEntry) -> bool:
     """Unloading the Tuya platforms."""
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         tuya = entry.runtime_data
         if tuya.device_manager.mq is not None:
             tuya.device_manager.mq.stop()
-        tuya.device_manager.remove_device_listener(tuya.listener)
+        tuya.device_manager.remove_device_listener(tuya.device_listener)
     return unload_ok
 
 
@@ -176,7 +180,7 @@ class DeviceListener(TuyaDeviceListener):
 
         device_manager = self.device_manager
         device_manager.mq.stop()
-        tuya_mq = TuyaOpenMQ_2(device_manager.api)
+        tuya_mq = cast("TuyaOpenMQ", TuyaOpenMQ_2(device_manager.api))
         tuya_mq.start()
 
         device_manager.mq = tuya_mq

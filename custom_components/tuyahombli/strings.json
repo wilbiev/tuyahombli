@@ -404,22 +404,22 @@
         "state": {
           "level_1": "[%key:common::state::low%]",
           "level_10": "[%key:common::state::high%]",
-          "level_2": "[%key:component::tuya::entity::select::blanket_level::state::level_2%]",
-          "level_3": "[%key:component::tuya::entity::select::blanket_level::state::level_3%]",
-          "level_4": "[%key:component::tuya::entity::select::blanket_level::state::level_4%]",
-          "level_5": "[%key:component::tuya::entity::select::blanket_level::state::level_5%]",
-          "level_6": "[%key:component::tuya::entity::select::blanket_level::state::level_6%]",
-          "level_7": "[%key:component::tuya::entity::select::blanket_level::state::level_7%]",
-          "level_8": "[%key:component::tuya::entity::select::blanket_level::state::level_8%]",
-          "level_9": "[%key:component::tuya::entity::select::blanket_level::state::level_9%]"
+          "level_2": "[%key:component::tuyahombli::entity::select::blanket_level::state::level_2%]",
+          "level_3": "[%key:component::tuyahombli::entity::select::blanket_level::state::level_3%]",
+          "level_4": "[%key:component::tuyahombli::entity::select::blanket_level::state::level_4%]",
+          "level_5": "[%key:component::tuyahombli::entity::select::blanket_level::state::level_5%]",
+          "level_6": "[%key:component::tuyahombli::entity::select::blanket_level::state::level_6%]",
+          "level_7": "[%key:component::tuyahombli::entity::select::blanket_level::state::level_7%]",
+          "level_8": "[%key:component::tuyahombli::entity::select::blanket_level::state::level_8%]",
+          "level_9": "[%key:component::tuyahombli::entity::select::blanket_level::state::level_9%]"
         }
       },
       "indexed_led_type": {
         "name": "Light {index} source type",
         "state": {
-          "halogen": "[%key:component::tuya::entity::select::led_type::state::halogen%]",
-          "incandescent": "[%key:component::tuya::entity::select::led_type::state::incandescent%]",
-          "led": "[%key:component::tuya::entity::select::led_type::state::led%]"
+          "halogen": "[%key:component::tuyahombli::entity::select::led_type::state::halogen%]",
+          "incandescent": "[%key:component::tuyahombli::entity::select::led_type::state::incandescent%]",
+          "led": "[%key:component::tuyahombli::entity::select::led_type::state::led%]"
         }
       },
       "inverter_work_mode": {
@@ -485,7 +485,7 @@
         "name": "Power on behavior",
         "state": {
           "last": "Remember last state",
-          "memory": "[%key:component::tuya::entity::select::relay_status::state::last%]",
+          "memory": "[%key:component::tuyahombli::entity::select::relay_status::state::last%]",
           "off": "[%key:common::state::off%]",
           "on": "[%key:common::state::on%]",
           "power_off": "[%key:common::state::off%]",
@@ -557,7 +557,7 @@
         }
       },
       "volume": {
-        "name": "[%key:component::tuya::entity::number::volume::name%]"
+        "name": "[%key:component::tuyahombli::entity::number::volume::name%]"
       },
       "weather_delay": {
         "name": "Weather delay",
@@ -672,7 +672,7 @@
         "name": "Flow sensor data"
       },
       "formaldehyde": {
-        "name": "[%key:component::tuya::entity::binary_sensor::formaldehyde::name%]"
+        "name": "[%key:component::tuyahombli::entity::binary_sensor::formaldehyde::name%]"
       },
       "gas": {
         "name": "Gas"
@@ -737,7 +737,7 @@
         "name": "Luminosity"
       },
       "methane": {
-        "name": "[%key:component::tuya::entity::binary_sensor::methane::name%]"
+        "name": "[%key:component::tuyahombli::entity::binary_sensor::methane::name%]"
       },
       "odor_elimination_status": {
         "name": "Status",

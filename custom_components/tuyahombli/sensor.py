@@ -1770,9 +1770,11 @@ async def async_setup_entry(
         entities: list[TuyaSensorEntity] = []
         for device_id in device_ids:
             device = device_manager.device_map[device_id]
-            if descriptions := SENSORS.get(device.category):
+            if descriptions := SENSORS.get(DeviceCategory(device.category)):
                 entities.extend(
-                    TuyaSensorEntity(device, device_manager, description, dpcode_wrapper)
+                    TuyaSensorEntity(
+                        device, device_manager, description, dpcode_wrapper
+                    )
                     for description in descriptions
                     if (dpcode_wrapper := _get_dpcode_wrapper(device, description))
                 )

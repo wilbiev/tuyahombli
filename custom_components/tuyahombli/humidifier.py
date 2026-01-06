@@ -92,7 +92,7 @@ async def async_setup_entry(
         for device_id in device_ids:
             device = device_manager.device_map[device_id]
             if (
-                description := HUMIDIFIERS.get(device.category)
+                description := HUMIDIFIERS.get(DeviceCategory(device.category))
             ) and _has_a_valid_dpcode(device, description):
                 entities.append(
                     TuyaHumidifierEntity(

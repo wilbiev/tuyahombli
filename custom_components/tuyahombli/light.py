@@ -431,7 +431,7 @@ async def async_setup_entry(
         entities: list[TuyaLightEntity] = []
         for device_id in device_ids:
             device = device_manager.device_map[device_id]
-            if descriptions := LIGHTS.get(device.category):
+            if descriptions := LIGHTS.get(DeviceCategory(device.category)):
                 entities.extend(
                     TuyaLightEntity(
                         device,

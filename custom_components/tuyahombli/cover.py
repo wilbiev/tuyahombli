@@ -206,7 +206,7 @@ async def async_setup_entry(
         entities: list[TuyaCoverEntity] = []
         for device_id in device_ids:
             device = device_manager.device_map[device_id]
-            if descriptions := COVERS.get(device.category):
+            if descriptions := COVERS.get(DeviceCategory(device.category)):
                 entities.extend(
                     TuyaCoverEntity(
                         device,

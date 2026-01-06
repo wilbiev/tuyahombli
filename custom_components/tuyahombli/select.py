@@ -209,7 +209,6 @@ SELECTS: dict[DeviceCategory, tuple[SelectEntityDescription, ...]] = {
             key=DPCode.TIMER_DELAY,
             translation_key="timer_delay",
             entity_category=EntityCategory.CONFIG,
-												   
         ),
     ),
     DeviceCategory.SGBJ: (
@@ -364,10 +363,13 @@ async def async_setup_entry(
         entities: list[TuyaSelectEntity] = []
         for device_id in device_ids:
             device = device_manager.device_map[device_id]
-            if descriptions := SELECTS.get(device.category):
+            if descriptions := SELECTS.get(DeviceCategory(device.category)):
                 entities.extend(
                     TuyaSelectEntity(
-                        device, device_manager, description, dpcode_wrapper=dpcode_wrapper
+                        device,
+                        device_manager,
+                        description,
+                        dpcode_wrapper=dpcode_wrapper,
                     )
                     for description in descriptions
                     if (

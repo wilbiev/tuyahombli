@@ -86,9 +86,11 @@ async def async_setup_entry(
         entities: list[TuyaButtonEntity] = []
         for device_id in device_ids:
             device = device_manager.device_map[device_id]
-            if descriptions := BUTTONS.get(device.category):
+            if descriptions := BUTTONS.get(DeviceCategory(device.category)):
                 entities.extend(
-                    TuyaButtonEntity(device, device_manager, description, dpcode_wrapper)
+                    TuyaButtonEntity(
+                        device, device_manager, description, dpcode_wrapper
+                    )
                     for description in descriptions
                     if (
                         dpcode_wrapper := DPCodeBooleanWrapper.find_dpcode(

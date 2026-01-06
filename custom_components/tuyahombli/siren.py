@@ -63,7 +63,7 @@ async def async_setup_entry(
         entities: list[TuyaSirenEntity] = []
         for device_id in device_ids:
             device = device_manager.device_map[device_id]
-            if descriptions := SIRENS.get(device.category):
+            if descriptions := SIRENS.get(DeviceCategory(device.category)):
                 entities.extend(
                     TuyaSirenEntity(device, device_manager, description, dpcode_wrapper)
                     for description in descriptions

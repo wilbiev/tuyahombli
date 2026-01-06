@@ -43,7 +43,7 @@
           "reportUnusedCoroutine": "none",
           "reportMissingTypeStubs": "none"
         },
-        "python.analysis.include": ["custom_components/integration_blueprint"],
+        "python.analysis.include": ["custom_components/tuyahombli"],
         "python.analysis.exclude": [
           "**/.venv/**",
           "**/venv/**",

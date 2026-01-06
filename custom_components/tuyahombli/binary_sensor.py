@@ -424,9 +424,11 @@ async def async_setup_entry(
         entities: list[TuyaBinarySensorEntity] = []
         for device_id in device_ids:
             device = device_manager.device_map[device_id]
-            if descriptions := BINARY_SENSORS.get(device.category):
+            if descriptions := BINARY_SENSORS.get(DeviceCategory(device.category)):
                 entities.extend(
-                    TuyaBinarySensorEntity(device, device_manager, description, dpcode_wrapper)
+                    TuyaBinarySensorEntity(
+                        device, device_manager, description, dpcode_wrapper
+                    )
                     for description in descriptions
                     if (dpcode_wrapper := _get_dpcode_wrapper(device, description))
                 )

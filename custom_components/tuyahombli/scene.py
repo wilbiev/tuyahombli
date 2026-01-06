@@ -1,4 +1,5 @@
 """Support for Tuya scenes."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -7,7 +8,7 @@ from tuya_iot import TuyaHomeManager, TuyaScene
 
 from homeassistant.components.scene import Scene
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import TuyaConfigEntry
@@ -56,4 +57,4 @@ class TuyaSceneEntity(Scene):
 
     def activate(self, **kwargs: Any) -> None:
         """Activate the scene."""
-        self.home_manager.trigger_scene(self.scene.home_id, self.scene.scene_id)
+        self.home_manager.trigger_scene(str(self.scene.home_id), self.scene.scene_id)

@@ -105,7 +105,7 @@ async def async_setup_entry(
                     TuyaClimateEntity(
                         device,
                         device_manager,
-                        CLIMATE_DESCRIPTIONS[device.category],
+                        CLIMATE_DESCRIPTIONS[DeviceCategory(device.category)],
                         hass.config.units.temperature_unit,
                         current_humidity_wrapper=_RoundedIntegerWrapper.find_dpcode(
                             device, DPCode.HUMIDITY_CURRENT

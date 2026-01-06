@@ -241,9 +241,7 @@ class DPCodeBooleanWrapper(DPCodeTypeInformationWrapper[TypeInformation]):
             return raw_value
         return None
 
-    def _convert_value_to_raw_value(
-        self, device: TuyaDevice, value: Any
-    ) -> Any | None:
+    def _convert_value_to_raw_value(self, device: TuyaDevice, value: Any) -> Any | None:
         """Convert a Home Assistant value back to a raw device value."""
         if value in (True, False):
             return value
@@ -428,7 +426,7 @@ def find_dpcode(
                 and parse_dptype(current_definition.type) is dptype
                 and (
                     type_information := type_information_cls.from_json(
-                        dpcode, current_definition.values
+                        dpcode, str(current_definition.values)
                     )
                 )
             ):

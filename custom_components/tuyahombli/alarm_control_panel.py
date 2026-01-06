@@ -117,7 +117,7 @@ async def async_setup_entry(
         entities: list[TuyaAlarmEntity] = []
         for device_id in device_ids:
             device = device_manager.device_map[device_id]
-            if descriptions := ALARM.get(device.category):
+            if descriptions := ALARM.get(DeviceCategory(device.category)):
                 entities.extend(
                     TuyaAlarmEntity(
                         device,

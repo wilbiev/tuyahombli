@@ -949,9 +949,11 @@ async def async_setup_entry(
         entities: list[TuyaSwitchEntity] = []
         for device_id in device_ids:
             device = device_manager.device_map[device_id]
-            if descriptions := SWITCHES.get(device.category):
+            if descriptions := SWITCHES.get(DeviceCategory(device.category)):
                 entities.extend(
-                    TuyaSwitchEntity(device, device_manager, description, dpcode_wrapper)
+                    TuyaSwitchEntity(
+                        device, device_manager, description, dpcode_wrapper
+                    )
                     for description in descriptions
                     if (
                         dpcode_wrapper := DPCodeBooleanWrapper.find_dpcode(

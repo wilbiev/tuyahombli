@@ -92,7 +92,7 @@ async def async_setup_entry(
         entities: list[TuyaValveEntity] = []
         for device_id in device_ids:
             device = device_manager.device_map[device_id]
-            if descriptions := VALVES.get(device.category):
+            if descriptions := VALVES.get(DeviceCategory(device.category)):
                 entities.extend(
                     TuyaValveEntity(device, device_manager, description, dpcode_wrapper)
                     for description in descriptions

@@ -179,7 +179,7 @@ class DeviceListener(TuyaDeviceListener):
         self.hass.add_job(self.async_remove_device, device.id)
 
         self.device_ids.add(device.id)
-        dispatcher_send(self.hass, TUYA_DISCOVERY_NEW, [device.id])
+        dispatcher_send(self.hass, f"{TUYA_DISCOVERY_NEW}", [device.id])
 
         device_manager = self.device_manager
         device_manager.mq.stop()

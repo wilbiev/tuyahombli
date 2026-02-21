@@ -118,7 +118,7 @@ class TuyaOpenMQ_2(threading.Thread):
 
     def _on_connect(self, mqttc: mqtt.Client, user_data: Any, flags, rc):
         logger.debug(f"connect flags->{flags}, rc->{rc}")
-        if rc == 0:
+        if rc == 0 and self.mq_config and self.mq_config.source_topic:
             for value in self.mq_config.source_topic.values():
                 mqttc.subscribe(value)
         elif rc == CONNECT_FAILED_NOT_AUTHORISED:
@@ -159,7 +159,8 @@ class TuyaOpenMQ_2(threading.Thread):
                 backoff_seconds = 1
 
                 # reconnect every 2 hours required.
-                time.sleep(self.mq_config.expire_time - 60)
+                if self.mq_config and self.mq_config.expire_time > 60:
+                    time.sleep(self.mq_config.expire_time - 60)
             except RequestException as e:
                 logger.exception(e)
                 logger.error(
@@ -220,8 +221,9 @@ class TuyaOpenMQ_2(threading.Thread):
         """
         logger.debug("stop")
         self.message_listeners = set()
-        self.client.disconnect()
-        self.client = None
+        if self.client:
+            self.client.disconnect()
+            self.client = None
         self._stop_event.set()
 
     def add_message_listener(self, listener: Callable[[str], None]):
@@ -229,5 +231,5 @@ class TuyaOpenMQ_2(threading.Thread):
         self.message_listeners.add(listener)
 
     def remove_message_listener(self, listener: Callable[[str], None]):
-        """Remvoe mqtt message listener."""
+        """Remove mqtt message listener."""
         self.message_listeners.discard(listener)

@@ -208,7 +208,7 @@ class DPCodeTypeInformationWrapper[T: TypeInformation](DPCodeWrapper):
             device, dpcodes, dptype=cls.DPTYPE, prefer_function=prefer_function
         ):
             return cls(
-                dpcode=type_information.dpcode, type_information=type_information
+                dpcode=type_information.dpcode, type_information=cast(T, type_information)
             )
         return None
 
@@ -391,6 +391,16 @@ def find_dpcode(
     *,
     prefer_function: bool = False,
     dptype: Literal[DPType.BOOLEAN, DPType.JSON, DPType.RAW],
+) -> TypeInformation | None: ...
+
+
+@overload
+def find_dpcode(
+    device: TuyaDevice,
+    dpcodes: str | DPCode | tuple[DPCode, ...] | None,
+    *,
+    prefer_function: bool = False,
+    dptype: DPType,
 ) -> TypeInformation | None: ...
 
 

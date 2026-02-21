@@ -1,4 +1,5 @@
 """Config flow for Tuya."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -104,9 +105,9 @@ class TuyaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     data=data,
                 )
             errors["base"] = "login_error"
-            placeholders = {
-                TUYA_RESPONSE_CODE: response.get(TUYA_RESPONSE_CODE),
-                TUYA_RESPONSE_MSG: response.get(TUYA_RESPONSE_MSG),
+            placeholders: dict[str, str] = {
+                TUYA_RESPONSE_CODE: str(response.get(TUYA_RESPONSE_CODE, "")),
+                TUYA_RESPONSE_MSG: str(response.get(TUYA_RESPONSE_MSG, "")),
             }
 
         if user_input is None:
